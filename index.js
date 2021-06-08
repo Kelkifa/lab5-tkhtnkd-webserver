@@ -11,9 +11,39 @@ app.use(express.static(path.join(__dirname, 'public')));
 /** Connect to database */
 const db = require('./src/core/connectDb');
 db.connect();
-/** get data from database */
+/** require model data from database */
 const temperatureModel = require('./src/models/temperatureModel');
 
+
+const server = require('http').Server(app);
+
+
+/** Socket IO */
+const io = require('socket.io')(server);
+io.on('connection', async socket => {
+    try {
+        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
+        console.log(`[SOCKET] co nguoi ket noi: ${socket.id}`);  //Có client kết nối thì in id của client đó ra
+        socket.emit('First-data', data);
+        // await temperatureModel.deleteMany();
+        socket.on('Client-send-data', async (data) => {         //Khi socket client gửi dữ liệu
+            try {
+                const data = await temperatureModel.find();     //Lấy tất cả dữ liệu từ database 
+                io.sockets.emit('Server-send-data', data);
+            }
+            catch (error) {
+                console.log(error);
+            }
+        });
+
+        socket.on('disconnect', () => {                         //Khi có socket client disconnect
+            console.log(`[SOCKET] co nguoi disconnect: ${socket.id}`);
+        });
+
+    } catch (error) {
+        console.log(`Internal server: ${error.message}`);
+    }
+});
 
 /** MQTT */
 const mqtt = require('mqtt');
@@ -28,33 +58,21 @@ client.on('connect', function () {
     client.subscribe(TOPIC);
 });
 
-client.on('message', function (topic, message) {   //khi có message đến
+client.on('message', async function (topic, message) {   //khi có message đến
     console.log(`[MQTT] message: ${message.toString()}`);
+    try {
+        const temperature = new temperatureModel({ temperature: message });
+        await temperature.save();
+        console.log(`[SERVER] data is saved`);
+        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
+        io.sockets.emit('Server-send-data', data);
+        console.log(`[SERVER] Data get: ${data}`);
 
-
+    } catch (error) {
+        console.log(`[SERVER] can't save: ${error}`);
+    }
 })
 
-/** Socket IO */
-const server = require('http').Server(app);
-const io = require('socket.io')(server);
-
-io.on('connection', socket => {
-    console.log(`[SOCKET] co nguoi ket noi: ${socket.id}`);  //Có client kết nối thì in id của client đó ra
-    socket.emit('First-data', data);
-
-    socket.on('Client-send-data', async (data) => {         //Khi socket client gửi dữ liệu
-        try {
-            const data = await temperatureModel.find();     //Lấy tất cả dữ liệu từ database 
-            io.sockets.emit('Server-send-data', data)
-        } catch (error) {
-            console.log(error);
-        }
-    });
-
-    socket.on('disconnect', () => {
-        console.log(`[SOCKET] co nguoi disconnect: ${socket.id}`);
-    })
-})
 
 /** Server */
 app.get('/', (req, res) => {
