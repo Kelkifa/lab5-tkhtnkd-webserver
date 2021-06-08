@@ -22,7 +22,7 @@ const server = require('http').Server(app);
 const io = require('socket.io')(server);
 io.on('connection', async socket => {
     try {
-        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
+        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature humidity createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
         console.log(`[SOCKET] co nguoi ket noi: ${socket.id}`);  //Có client kết nối thì in id của client đó ra
         socket.emit('First-data', data);
         // await temperatureModel.deleteMany();
@@ -53,20 +53,21 @@ const client = mqtt.connect('mqtt://mqtt.flespi.io:1883', {
 
 const TOPIC = '/topic/qos0';
 
-client.on('connect', function () {
+client.on('connect', function () {      // connect thành công đên mqtt broker
     console.log(`[MQTT] connected to MQTT broker`);
     client.subscribe(TOPIC);
 });
 
 client.on('message', async function (topic, message) {   //khi có message đến
     console.log(`[MQTT] message: ${message.toString()}`);
+    const messageArr = message.toString().split(" ");
     try {
-        const temperature = new temperatureModel({ temperature: message });
+        const temperature = new temperatureModel({ temperature: messageArr[0], humidity: messageArr[1] });
         await temperature.save();
         console.log(`[SERVER] data is saved`);
-        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
+        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature humidity createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
         io.sockets.emit('Server-send-data', data);
-        console.log(`[SERVER] Data get: ${data}`);
+        // console.log(`[SERVER] Data get: ${data}`);
 
     } catch (error) {
         console.log(`[SERVER] can't save: ${error}`);

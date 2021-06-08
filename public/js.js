@@ -1,15 +1,17 @@
 var socket = io('http://localhost:3000');
 
-// var database;
+// var styledata ={createAt: String, temperature: String, humidity: String}
 
 socket.on('Server-send-data', data => {
     // var database = data;
-    rawChart(data.reverse());
-    // console.log(data.reverse());
+    rawChart(data.reverse(), 'temperature', 'myChart');
+    rawChart(data, 'humidity', 'myChartHumidity');
+
 })
 socket.on('First-data', data => {
     // database = data;
-    rawChart(data.reverse());
+    rawChart(data.reverse(), 'temperature', 'myChart');
+    rawChart(data, 'humidity', 'myChartHumidity');
     // console.log(data);
 })
 $(document).ready(() => {
@@ -20,9 +22,9 @@ $(document).ready(() => {
 
 });
 
-function rawChart(data) {
+function rawChart(data, type, element) {
 
-    var tempArr = data.map(value => value.temperature);
+    var tempArr = data.map(value => value[type]);
     var timeArr = data.map(value => {
         var re = /(?<=T)\d+|(?<=:)\d+/g;
         var arr = value.createdAt.match(re);
@@ -34,7 +36,7 @@ function rawChart(data) {
     console.log(tempArr);
 
     //Qủa biểu đồ
-    let myChart = document.getElementById('myChart').getContext('2d');
+    let myChart = document.getElementById(element).getContext('2d');
     // Global Options
     Chart.defaults.global.defaultFontFamily = 'Lato';
     Chart.defaults.global.defaultFontSize = 15;
@@ -45,20 +47,12 @@ function rawChart(data) {
         data: {
             labels: timeArr,
             datasets: [{
-                label: 'temperature',
+                label: type === 'temperature' ? 'temperature' : 'humidity     ',
                 data: tempArr,
                 //backgroundColor:'green',
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.6)',
-                    'rgba(54, 162, 235, 0.6)',
-                    'rgba(255, 206, 86, 0.6)',
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(153, 102, 255, 0.6)',
-                    'rgba(255, 159, 64, 0.6)',
-                    'rgba(255, 99, 132, 0.6)'
-                ],
+                backgroundColor: type === 'temperature' ? 'rgba(255, 99, 132, 0.5)' : "rgba(26, 113, 243, 0.5)",
                 borderWidth: 2,
-                borderColor: '#c04000',
+                borderColor: type === 'temperature' ? '#c04000' : '#165df5',
                 hoverBorderWidth: 3,
                 hoverBorderColor: '#f88017',
                 // fill: false,
@@ -69,7 +63,7 @@ function rawChart(data) {
         options: {
             title: {
                 display: true,
-                text: 'Biểu đồ nhiệt độ đo đo từ ESP',
+                text: type === 'temperature' ? 'Biểu đồ nhiệt độ đo từ ESP' : 'Biểu đồ độ ẩm đo từ ESP',
                 fontSize: 25,
             },
             legend: {
@@ -94,7 +88,7 @@ function rawChart(data) {
                 yAxes: [{
                     scaleLabel: {
                         display: true,
-                        labelString: 'temparature (C)'
+                        labelString: type === 'temperature' ? 'temparature (C)' : 'humidity (%)'
                     }
                 }],
                 xAxes: [{
