@@ -60,7 +60,10 @@ function rawChart(data) {
                 borderWidth: 2,
                 borderColor: '#c04000',
                 hoverBorderWidth: 3,
-                hoverBorderColor: '#000'
+                hoverBorderColor: '#f88017',
+                // fill: false,
+                tension: 0,
+
             }]
         },
         options: {
