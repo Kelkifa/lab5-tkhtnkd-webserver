@@ -6,6 +6,7 @@ const ObjectId = Schema.ObjectId;
 const temperatures = new Schema(
     {
         temperature: { type: Number },
+        humidity: { type: Number },
     },
     {
         timestamps: true,
