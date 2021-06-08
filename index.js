@@ -22,10 +22,10 @@ const server = require('http').Server(app);
 const io = require('socket.io')(server);
 io.on('connection', async socket => {
     try {
-        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(10).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
+        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
         console.log(`[SOCKET] co nguoi ket noi: ${socket.id}`);  //Có client kết nối thì in id của client đó ra
         socket.emit('First-data', data);
-
+        // await temperatureModel.deleteMany();
         socket.on('Client-send-data', async (data) => {         //Khi socket client gửi dữ liệu
             try {
                 const data = await temperatureModel.find();     //Lấy tất cả dữ liệu từ database 
@@ -64,7 +64,7 @@ client.on('message', async function (topic, message) {   //khi có message đế
         const temperature = new temperatureModel({ temperature: message });
         await temperature.save();
         console.log(`[SERVER] data is saved`);
-        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(10).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
+        const data = await temperatureModel.find().sort({ 'createdAt': 'DESC' }).limit(15).select('temperature createdAt -_id'); //lấy 5 giá trị mới nhất từ data base
         io.sockets.emit('Server-send-data', data);
         console.log(`[SERVER] Data get: ${data}`);
 

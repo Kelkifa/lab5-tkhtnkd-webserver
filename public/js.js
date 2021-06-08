@@ -26,6 +26,8 @@ function rawChart(data) {
     var timeArr = data.map(value => {
         var re = /(?<=T)\d+|(?<=:)\d+/g;
         var arr = value.createdAt.match(re);
+        arr[0] = (parseInt(arr[0]) + 7) % 24;
+        arr[0] = arr[0] < 10 ? "0" + arr[0] : arr[0];
         return `${arr[0]}:${arr[1]}:${arr[2]}`;
     });
     console.log(timeArr);
@@ -65,7 +67,7 @@ function rawChart(data) {
             title: {
                 display: true,
                 text: 'Biểu đồ nhiệt độ đo đo từ ESP',
-                fontSize: 25
+                fontSize: 25,
             },
             legend: {
                 display: true,
@@ -84,6 +86,20 @@ function rawChart(data) {
             },
             tooltips: {
                 enabled: true
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'temparature (C)'
+                    }
+                }],
+                xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'time (hh/mm/ss)'
+                    }
+                }],
             }
         }
     });
